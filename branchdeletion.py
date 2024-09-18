@@ -27,30 +27,27 @@ def delete_branch(repo, branch):
         logging.error(f"Error deleting branch '{branch}': {e}")
         return False
 
-def process_repo(username, token, repo_name, branches_to_delete):
+def process_repo(username, token, repo_name):
+    branches_to_delete = ["feature_cloudhub", "development_cloudhub", "integration_cloudhub"]  # Hardcoded branches
+
+    results = []
     try:
         g = Github(username, token)
         repo = g.get_repo(repo_name)
 
-        results = []
-
         for branch in branches_to_delete:
-            if branch == "feature_cloudhub":
-                logging.info(f"Checking if branch '{branch}' exists in '{repo_name}'.")
-                try:
-                    repo.get_branch(branch)
-                    disable_branch_protection(repo, branch)
-                    success = delete_branch(repo, branch)
-                    results.append({'branch': branch, 'status': 'deleted' if success else 'failed'})
-                except UnknownObjectException:
-                    logging.info(f"Branch '{branch}' does not exist in '{repo_name}'. Skipping deletion.")
-                    results.append({'branch': branch, 'status': 'not found'})
-                except Exception as e:
-                    logging.error(f"Error processing branch '{branch}': {e}")
-                    results.append({'branch': branch, 'status': f'failed - {str(e)}'})
-
-            else:
-                logging.info(f"Skipping branch '{branch}' (not 'feature_cloudhub').")
+            logging.info(f"Checking if branch '{branch}' exists in '{repo_name}'.")
+            try:
+                repo.get_branch(branch)
+                disable_branch_protection(repo, branch)
+                success = delete_branch(repo, branch)
+                results.append({'branch': branch, 'status': 'deleted' if success else 'failed'})
+            except UnknownObjectException:
+                logging.info(f"Branch '{branch}' does not exist in '{repo_name}'. Skipping deletion.")
+                results.append({'branch': branch, 'status': 'not found'})
+            except Exception as e:
+                logging.error(f"Error processing branch '{branch}': {e}")
+                results.append({'branch': branch, 'status': f'failed - {str(e)}'})
 
         return results
 
@@ -72,13 +69,12 @@ def create_branches_from_excel(username, token, excel_file, output_file):
         for index, row in df.iterrows():
             repo_name = row['source_repo_name'].strip()  # Ensure no leading/trailing spaces
             logging.info(f"Processing repository: {repo_name}")
-            branches_to_delete = [branch.strip() for branch in row['branches'].split(',')]
-            
+
             if '/' not in repo_name:
                 logging.error(f"Invalid repository name format: '{repo_name}'. It should be 'username/repository_name'.")
                 continue
             
-            repo_results = process_repo(username, token, repo_name, branches_to_delete)
+            repo_results = process_repo(username, token, repo_name)
             results.extend(repo_results)
 
         # Create a DataFrame for results and save to Excel
@@ -89,13 +85,4 @@ def create_branches_from_excel(username, token, excel_file, output_file):
     except Exception as e:
         logging.error(f"Error reading Excel file or processing branches: {e}")
 
-if __name__ == "__main__":
-    username = os.getenv('USERNAME')
-    token = os.getenv('TOKEN')
-    excel_file = 'repositories.xlsx'  # Path to your input Excel file
-    output_file = 'branch_deletion_results.xlsx'  # Path to your output Excel file
-
-    if not (username and token):
-        logging.error("GitHub credentials not provided. Set USERNAME and TOKEN environment variables.")
-    else:
-        create_branches_from_excel(username, token, excel_file, output_file)
+if __name
