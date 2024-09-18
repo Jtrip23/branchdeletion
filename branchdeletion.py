@@ -85,4 +85,13 @@ def create_branches_from_excel(username, token, excel_file, output_file):
     except Exception as e:
         logging.error(f"Error reading Excel file or processing branches: {e}")
 
-if __name
+if __name__ == "__main__":
+    username = os.getenv('USERNAME')
+    token = os.getenv('TOKEN')
+    excel_file = 'repositories.xlsx'  # Path to your input Excel file
+    output_file = 'branch_deletion_results.xlsx'  # Path to your output Excel file
+
+    if not (username and token):
+        logging.error("GitHub credentials not provided. Set USERNAME and TOKEN environment variables.")
+    else:
+        create_branches_from_excel(username, token, excel_file, output_file)
