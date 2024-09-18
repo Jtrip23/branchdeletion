@@ -1,0 +1,26 @@
+name: Run Python Script
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Has to be changed with Clients runner which they are using.
+    container:
+      image: python:3.12.0
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+
+      - name: Install dependencies
+        run: |
+          pip install pandas openpyxl
+          pip install PyGithub
+              
+
+      - name: Delete branch in GitHub
+        run: python branchdeletion.py
+        env:
+          USERNAME: ${{ secrets.USERNAME }}  #Username of Github
+          TOKEN: ${{ secrets.TOKEN }}        #Personal access token has to be created
