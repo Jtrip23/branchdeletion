@@ -9,7 +9,7 @@ def disable_branch_protection(repo, branch):
     try:
         branch_obj = repo.get_branch(branch)
         # Removing branch protection if it exists
-        branch_obj.remove_protection()  # Correct way to remove protection
+        branch_obj.remove_protection()
         logging.info(f"Branch protection for '{branch}' has been disabled.")
     except UnknownObjectException:
         logging.info(f"No branch protection found for '{branch}', nothing to disable.")
@@ -34,9 +34,18 @@ def process_repo(username, token, repo_name, branches_to_delete):
         results = []
 
         for branch in branches_to_delete:
-            disable_branch_protection(repo, branch)
-            success = delete_branch(repo, branch)
-            results.append({'branch': branch, 'status': 'deleted' if success else 'failed'})
+            if branch == "feature_cloudhub":
+                logging.info(f"Checking if branch '{branch}' exists in '{repo_name}'.")
+                try:
+                    repo.get_branch(branch)
+                    disable_branch_protection(repo, branch)
+                    success = delete_branch(repo, branch)
+                    results.append({'branch': branch, 'status': 'deleted' if success else 'failed'})
+                except UnknownObjectException:
+                    logging.info(f"Branch '{branch}' does not exist in '{repo_name}'. Skipping deletion.")
+                    results.append({'branch': branch, 'status': 'not found'})
+            else:
+                logging.info(f"Skipping branch '{branch}' (not 'feature_cloudhub').")
 
         return results
 
