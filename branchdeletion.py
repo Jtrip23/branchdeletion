@@ -19,7 +19,8 @@ def disable_branch_protection(repo, branch):
 def delete_branch(repo, branch):
     try:
         # Delete the branch using GitHub API
-        repo.git.push('origin', f':{branch}')  # Push an empty reference to delete the branch
+        ref = f"heads/{branch}"
+        repo.get_git_ref(ref).delete()  # Use the GitHub API to delete the branch
         logging.info(f"Branch '{branch}' has been deleted successfully.")
         return True
     except Exception as e:
@@ -39,11 +40,8 @@ def process_repo(username, token, repo_name, branches_to_delete):
                 try:
                     repo.get_branch(branch)
                     disable_branch_protection(repo, branch)
-                    # Deleting the branch via the API
-                    ref = f"heads/{branch}"
-                    repo.git.push('origin', f":{branch}")  # Push to delete the branch
-                    logging.info(f"Branch '{branch}' has been deleted successfully.")
-                    results.append({'branch': branch, 'status': 'deleted'})
+                    success = delete_branch(repo, branch)
+                    results.append({'branch': branch, 'status': 'deleted' if success else 'failed'})
                 except UnknownObjectException:
                     logging.info(f"Branch '{branch}' does not exist in '{repo_name}'. Skipping deletion.")
                     results.append({'branch': branch, 'status': 'not found'})
