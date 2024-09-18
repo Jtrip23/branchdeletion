@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.INFO)
 def disable_branch_protection(repo, branch):
     try:
         branch_obj = repo.get_branch(branch)
-        # Removing branch protection
+        # Removing branch protection if it exists
         branch_obj.remove_protection()  # Correct way to remove protection
         logging.info(f"Branch protection for '{branch}' has been disabled.")
     except UnknownObjectException:
@@ -18,8 +18,8 @@ def disable_branch_protection(repo, branch):
 
 def delete_branch(repo, branch):
     try:
-        # Use the correct method to delete a branch
-        repo.git.delete_ref(f"refs/heads/{branch}")
+        # Correct way to delete a branch using delete_ref()
+        repo.delete_git_ref(f"heads/{branch}")
         logging.info(f"Branch '{branch}' has been deleted successfully.")
         return True
     except Exception as e:
