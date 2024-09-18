@@ -39,11 +39,18 @@ def process_repo(username, token, repo_name, branches_to_delete):
                 try:
                     repo.get_branch(branch)
                     disable_branch_protection(repo, branch)
-                    success = delete_branch(repo, branch)
-                    results.append({'branch': branch, 'status': 'deleted' if success else 'failed'})
+                    # Deleting the branch via the API
+                    ref = f"heads/{branch}"
+                    repo.git.push('origin', f":{branch}")  # Push to delete the branch
+                    logging.info(f"Branch '{branch}' has been deleted successfully.")
+                    results.append({'branch': branch, 'status': 'deleted'})
                 except UnknownObjectException:
                     logging.info(f"Branch '{branch}' does not exist in '{repo_name}'. Skipping deletion.")
                     results.append({'branch': branch, 'status': 'not found'})
+                except Exception as e:
+                    logging.error(f"Error processing branch '{branch}': {e}")
+                    results.append({'branch': branch, 'status': f'failed - {str(e)}'})
+
             else:
                 logging.info(f"Skipping branch '{branch}' (not 'feature_cloudhub').")
 
