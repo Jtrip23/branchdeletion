@@ -27,8 +27,8 @@ def delete_branch(repo, branch):
 def process_repo(username, token, repo_name, branches_to_delete):
     try:
         g = Github(username, token)
-        repo = g.get_repo(repo_name)  # Using full repo name
-        
+        repo = g.get_repo(repo_name)  # Use full repo name
+
         results = []
 
         for branch in branches_to_delete:
@@ -57,6 +57,11 @@ def create_branches_from_excel(username, token, excel_file, output_file):
             repo_name = row['source_repo_name'].strip()  # Ensure no leading/trailing spaces
             logging.info(f"Processing repository: {repo_name}")
             branches_to_delete = [branch.strip() for branch in row['branches'].split(',')]  # Clean up branch names
+            
+            # Check if repo name is valid and exists
+            if '/' not in repo_name:
+                logging.error(f"Invalid repository name format: '{repo_name}'. It should be 'username/repository_name'.")
+                continue
             
             repo_results = process_repo(username, token, repo_name, branches_to_delete)
             results.extend(repo_results)
