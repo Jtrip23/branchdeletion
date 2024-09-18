@@ -27,7 +27,7 @@ def delete_branch(repo, branch):
 def process_repo(username, token, repo_name, branches_to_delete):
     try:
         g = Github(username, token)
-        repo = g.get_repo(f"{username}/{repo_name}")
+        repo = g.get_repo(repo_name)  # Using full repo name
         
         results = []
 
@@ -41,6 +41,9 @@ def process_repo(username, token, repo_name, branches_to_delete):
     except BadCredentialsException:
         logging.error("Invalid GitHub credentials. Please check your username and token.")
         return [{'branch': branch, 'status': 'failed - invalid credentials'} for branch in branches_to_delete]
+    except UnknownObjectException:
+        logging.error(f"Repository '{repo_name}' not found.")
+        return [{'branch': branch, 'status': f'failed - repo not found: {repo_name}'} for branch in branches_to_delete]
     except Exception as e:
         logging.error(f"Error processing repository '{repo_name}': {e}")
         return [{'branch': branch, 'status': f'failed - {str(e)}'} for branch in branches_to_delete]
@@ -51,8 +54,10 @@ def create_branches_from_excel(username, token, excel_file, output_file):
         results = []
 
         for index, row in df.iterrows():
-            repo_name = row['source_repo_name']
-            branches_to_delete = row['branches'].split(',')  # Assuming branches are in a comma-separated format
+            repo_name = row['source_repo_name'].strip()  # Ensure no leading/trailing spaces
+            logging.info(f"Processing repository: {repo_name}")
+            branches_to_delete = [branch.strip() for branch in row['branches'].split(',')]  # Clean up branch names
+            
             repo_results = process_repo(username, token, repo_name, branches_to_delete)
             results.extend(repo_results)
 
