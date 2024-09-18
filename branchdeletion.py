@@ -18,7 +18,8 @@ def disable_branch_protection(repo, branch):
 
 def delete_branch(repo, branch):
     try:
-        repo.delete_git_ref(f"heads/{branch}")  # Correct way to delete a branch
+        # Use the correct method to delete a branch
+        repo.git.delete_ref(f"refs/heads/{branch}")
         logging.info(f"Branch '{branch}' has been deleted successfully.")
         return True
     except Exception as e:
