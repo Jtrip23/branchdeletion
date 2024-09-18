@@ -7,9 +7,11 @@ logging.basicConfig(level=logging.INFO)
 
 def disable_branch_protection(repo, branch):
     try:
-        branch_protection = repo.get_branch(branch).get_protection()
-        branch_protection.remove()
-        logging.info(f"Branch protection for '{branch}' has been disabled.")
+        branch_obj = repo.get_branch(branch)
+        branch_protection = branch_obj.get_protection()
+        if branch_protection:
+            branch_protection.remove()  # Correct way to remove protection
+            logging.info(f"Branch protection for '{branch}' has been disabled.")
     except UnknownObjectException:
         logging.info(f"No branch protection found for '{branch}', nothing to disable.")
     except Exception as e:
@@ -17,7 +19,8 @@ def disable_branch_protection(repo, branch):
 
 def delete_branch(repo, branch):
     try:
-        repo.git.delete_ref(f"refs/heads/{branch}")
+        branch_obj = repo.get_branch(branch)
+        branch_obj.delete()  # Correct way to delete a branch
         logging.info(f"Branch '{branch}' has been deleted successfully.")
         return True
     except Exception as e:
@@ -27,7 +30,7 @@ def delete_branch(repo, branch):
 def process_repo(username, token, repo_name, branches_to_delete):
     try:
         g = Github(username, token)
-        repo = g.get_repo(repo_name)  # Use full repo name
+        repo = g.get_repo(repo_name)
 
         results = []
 
@@ -56,9 +59,8 @@ def create_branches_from_excel(username, token, excel_file, output_file):
         for index, row in df.iterrows():
             repo_name = row['source_repo_name'].strip()  # Ensure no leading/trailing spaces
             logging.info(f"Processing repository: {repo_name}")
-            branches_to_delete = [branch.strip() for branch in row['branches'].split(',')]  # Clean up branch names
+            branches_to_delete = [branch.strip() for branch in row['branches'].split(',')]
             
-            # Check if repo name is valid and exists
             if '/' not in repo_name:
                 logging.error(f"Invalid repository name format: '{repo_name}'. It should be 'username/repository_name'.")
                 continue
