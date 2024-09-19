@@ -28,38 +28,40 @@ def delete_branch(repo, branch):
         return False
 
 def process_repo(username, token, repo_name):
-    branches_to_delete = ["feature_cloudhub", "development_cloudhub", "integration_cloudhub"]  # Hardcoded branches
+    branches_to_check = ["feature_cloudhub", "feature_new_cloudhub"]  # Branches to check for conditions
+    branches_status = {}
 
-    results = []
     try:
         g = Github(username, token)
         repo = g.get_repo(repo_name)
 
-        for branch in branches_to_delete:
+        # Check the existence of branches
+        for branch in branches_to_check:
             logging.info(f"Checking if branch '{branch}' exists in '{repo_name}'.")
             try:
                 repo.get_branch(branch)
-                disable_branch_protection(repo, branch)
-                success = delete_branch(repo, branch)
-                results.append({'branch': branch, 'status': 'deleted' if success else 'failed'})
+                branches_status[branch] = True
+                logging.info(f"Branch '{branch}' exists.")
             except UnknownObjectException:
-                logging.info(f"Branch '{branch}' does not exist in '{repo_name}'. Skipping deletion.")
-                results.append({'branch': branch, 'status': 'not found'})
-            except Exception as e:
-                logging.error(f"Error processing branch '{branch}': {e}")
-                results.append({'branch': branch, 'status': f'failed - {str(e)}'})
+                branches_status[branch] = False
+                logging.info(f"Branch '{branch}' does not exist in '{repo_name}'.")
 
-        return results
+        # Logic to delete branch
+        if branches_status.get("feature_cloudhub") and branches_status.get("feature_new_cloudhub"):
+            logging.info("Both branches found. Deleting 'feature_cloudhub'.")
+            disable_branch_protection(repo, "feature_cloudhub")
+            delete_branch(repo, "feature_cloudhub")
+        elif branches_status.get("feature_cloudhub"):
+            logging.info("'feature_cloudhub' is present but will not be deleted as 'feature_new_cloudhub' is not found.")
+        else:
+            logging.info("No relevant branches to delete.")
 
     except BadCredentialsException:
         logging.error("Invalid GitHub credentials. Please check your username and token.")
-        return [{'branch': branch, 'status': 'failed - invalid credentials'} for branch in branches_to_delete]
     except UnknownObjectException:
         logging.error(f"Repository '{repo_name}' not found.")
-        return [{'branch': branch, 'status': f'failed - repo not found: {repo_name}'} for branch in branches_to_delete]
     except Exception as e:
         logging.error(f"Error processing repository '{repo_name}': {e}")
-        return [{'branch': branch, 'status': f'failed - {str(e)}'} for branch in branches_to_delete]
 
 def create_branches_from_excel(username, token, excel_file, output_file):
     try:
@@ -74,13 +76,9 @@ def create_branches_from_excel(username, token, excel_file, output_file):
                 logging.error(f"Invalid repository name format: '{repo_name}'. It should be 'username/repository_name'.")
                 continue
             
-            repo_results = process_repo(username, token, repo_name)
-            results.extend(repo_results)
+            process_repo(username, token, repo_name)
 
-        # Create a DataFrame for results and save to Excel
-        results_df = pd.DataFrame(results)
-        results_df.to_excel(output_file, index=False)
-        logging.info(f"Results saved to '{output_file}'.")
+        logging.info(f"Processing complete.")
 
     except Exception as e:
         logging.error(f"Error reading Excel file or processing branches: {e}")
