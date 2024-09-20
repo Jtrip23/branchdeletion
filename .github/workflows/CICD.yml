@@ -19,7 +19,7 @@ jobs:
           pip install PyGithub
               
 
-      - name: PR deletion in GitHub
+      - name: Delete branch in GitHub
         run: python branchdeletion.py
         env:
           USERNAME: ${{ secrets.USERNAME }}  #Username of Github
