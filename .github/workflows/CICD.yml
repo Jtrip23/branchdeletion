@@ -20,7 +20,7 @@ jobs:
               
 
       - name: Delete branch in GitHub
-        run: python branchdeletion.py
+        run: python PRdeletion.py
         env:
           USERNAME: ${{ secrets.USERNAME }}  #Username of Github
           TOKEN: ${{ secrets.TOKEN }}        #Personal access token has to be created
