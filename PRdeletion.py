@@ -5,33 +5,34 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-def delete_pull_request(repo, pr_number):
+def close_pull_request(repo, pr_number):
     try:
         pr = repo.get_pull(pr_number)
         if pr.state == "open":
             pr.edit(state='closed')  # Close the PR if it is open
-        pr.delete()  # Delete the PR
-        logging.info(f"Pull request #{pr_number} has been deleted successfully.")
+            logging.info(f"Closed pull request #{pr_number}: '{pr.title}'.")
+        else:
+            logging.info(f"Pull request #{pr_number}: '{pr.title}' is already closed.")
     except Exception as e:
-        logging.error(f"Error deleting pull request #{pr_number}: {e}")
+        logging.error(f"Error closing pull request #{pr_number}: {e}")
 
 def process_repo(username, token, repo_name):
-    target_pr_title = "integration_cloudhub"
+    target_base_branch = "integration_cloudhub"
     
     try:
         g = Github(username, token)
         repo = g.get_repo(repo_name)
 
         # Fetch all pull requests in the repository
-        prs = repo.get_pulls(state='all')  # Get all PRs (open and closed)
-        target_prs = [pr for pr in prs if pr.title == target_pr_title]
+        prs = repo.get_pulls(state='open')  # Get only open PRs
+        target_prs = [pr for pr in prs if pr.base.ref == target_base_branch]
 
         if target_prs:
             for pr in target_prs:
-                logging.info(f"Deleting pull request '{pr.title}' (#{pr.number}).")
-                delete_pull_request(repo, pr.number)
+                logging.info(f"Closing pull request '{pr.title}' (#{pr.number}) with base branch '{target_base_branch}'.")
+                close_pull_request(repo, pr.number)
         else:
-            logging.info(f"No pull requests titled '{target_pr_title}' found in '{repo_name}'.")
+            logging.info(f"No open pull requests with base branch '{target_base_branch}' found in '{repo_name}'.")
 
     except BadCredentialsException:
         logging.error("Invalid GitHub credentials. Please check your username and token.")
