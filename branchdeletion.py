@@ -30,6 +30,11 @@ def delete_branch(repo, branch):
 def process_repo(username, token, repo_name, branches_to_delete):
     try:
         g = Github(username, token)
+        
+        # Ensure repo_name is in the correct format: username/repository_name
+        if '/' not in repo_name:
+            repo_name = f"{username}/{repo_name}"  # Prepend the username if not already included
+        
         repo = g.get_repo(repo_name)
 
         results = []
@@ -74,10 +79,6 @@ def create_branches_from_excel(username, token, excel_file, output_file):
             logging.info(f"Processing repository: {repo_name}")
             branches_to_delete = [branch.strip() for branch in row['branches'].split(',')]
             
-            if '/' not in repo_name:
-                logging.error(f"Invalid repository name format: '{repo_name}'. It should be 'username/repository_name'.")
-                continue
-            
             repo_results = process_repo(username, token, repo_name, branches_to_delete)
             results.extend(repo_results)
 
@@ -85,7 +86,7 @@ def create_branches_from_excel(username, token, excel_file, output_file):
         results_df = pd.DataFrame(results)
         results_df.to_excel(output_file, index=False)
         logging.info(f"Results saved to '{output_file}'.")
-
+    
     except Exception as e:
         logging.error(f"Error reading Excel file or processing branches: {e}")
 
