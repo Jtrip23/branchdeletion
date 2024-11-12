@@ -77,7 +77,7 @@ def create_branches_from_excel(username, token, excel_file, output_file):
         for index, row in df.iterrows():
             repo_name = row['source_repo_name'].strip()  # Ensure no leading/trailing spaces
             logging.info(f"Processing repository: {repo_name}")
-            branches_to_delete = [branch.strip() for branch in row['branches'].split(',')]
+            branches_to_delete = [feature_cloudhub,development]
             
             repo_results = process_repo(username, token, repo_name, branches_to_delete)
             results.extend(repo_results)
